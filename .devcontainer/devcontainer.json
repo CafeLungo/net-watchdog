@@ -1,0 +1,22 @@
+{
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile",
+    "options": [
+      "--progress", "plain"
+    ],
+    "target": "development"
+  },
+  "mounts": [
+    {
+      "target": "/root",
+      "source": "devcontainer-profile",
+      "type": "volume"
+    },
+    {
+      "type": "bind",
+      "source": "${localEnv:HOME}/.kube",
+      "target": "/root/.kube"
+    }
+  ]
+}

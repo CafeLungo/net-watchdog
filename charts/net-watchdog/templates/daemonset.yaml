@@ -1,0 +1,111 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "net-watchdog.fullname" . }}
+  labels:
+    {{- include "net-watchdog.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "net-watchdog.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "net-watchdog.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.watchdog }}
+          env:
+            - name: INTERFACE
+              value: "{{ .interface }}"
+            - name: DELAY_SEC
+              value: "{{ .delaySec }}"
+            - name: MAX_DOWN_COUNT
+              value: "{{ .maxDownCount }}"
+          {{- end }}
+          args:
+            - sh
+            - -c
+            - |-
+              echo "Starting..."
+
+              test ! -z ${INTERFACE} || (echo "Error: Environment variable 'INTERFACE' is not set." && exit 1)
+              test ! -z ${DELAY_SEC} || (echo "Error: Environment variable 'DELAY_SEC' is not set." && exit 1)
+              test ! -z ${MAX_DOWN_COUNT} || (echo "Error: Environment variable 'MAX_DOWN_COUNT' is not set." && exit 1)
+
+              if ! ip link show "${INTERFACE}" > /dev/null 2>&1; then
+                echo "ERROR: Interface '${INTERFACE}' does not exist. Exiting."
+                exit 1
+              fi
+
+              up_count=0
+              down_count=0
+              while true; do
+                sleep $DELAY_SEC
+
+                if ip addr show ${INTERFACE} | grep -q "inet\b"; then
+                  up_count=$((up_count + 1))
+                  echo "$(hostname) - ${INTERFACE} is UP and has an IP address. count = ${up_count}"
+                  down_count=0
+                else
+                  down_count=$((down_count + 1))
+                  echo "WARNING: $(hostname) - ${INTERFACE} is either DOWN or doesn't have an IP address. count = ${down_count}"
+                  up_count=0
+                fi
+
+                if test "${down_count}" -gt "${MAX_DOWN_COUNT}"; then
+                  echo "URGENT: Rebooting the system, in attempt to recover from down network..."
+                  echo b > /proc/sysrq-trigger
+                fi
+              done
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      hostNetwork: true

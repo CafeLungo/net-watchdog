@@ -1,0 +1,10 @@
+version: "3"
+
+vars:
+  OUTPUT: dist
+  CHARTS_DIR: charts
+
+tasks:
+  build:
+    cmds:
+      - helm package charts/net-watchdog --destination {{.OUTPUT}}
