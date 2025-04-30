@@ -3,6 +3,17 @@ entries:
   net-watchdog:
   - apiVersion: v2
     appVersion: latest
+    created: "2025-04-30T00:35:54.19591159Z"
+    description: A Helm chart for watching for a host nic to connectivity, and reboot
+      the host if it's down.
+    digest: de192b8fe88294b83a5b2dfe8328f2a06de8fdaf14ef6973ef4edaba3de4c0f9
+    name: net-watchdog
+    type: application
+    urls:
+    - https://CafeLungo.github.io/net-watchdog/net-watchdog-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: latest
     created: "2025-04-26T20:00:51.892024155Z"
     description: A Helm chart for watching for a host nic to connectivity, and reboot
       the host if it's down.
@@ -12,4 +23,4 @@ entries:
     urls:
     - https://CafeLungo.github.io/net-watchdog/net-watchdog-0.1.0.tgz
     version: 0.1.0
-generated: "2025-04-26T20:00:51.89149824Z"
+generated: "2025-04-30T00:35:54.19542491Z"
